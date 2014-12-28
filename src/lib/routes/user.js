@@ -3,7 +3,9 @@
  */
 
 module.exports = function (container) {
-	container.server.get('/user/info', function (req, res, next) {
+	var server = container.server;
+
+	server.get('/user/info', function (req, res, next) {
 		if (!req.user) {
 			return res.sendUnauthenticated();
 		}
@@ -11,6 +13,20 @@ module.exports = function (container) {
 			name: req.user.name,
 			imageUrl: req.user.imageUrl
 		});
+		next();
+	});
+
+	/**
+	 * logout is not needed but encouraged to keep the authToken table
+	 * clean
+	 */
+	server.get('/user/logout', function (req, res, next) {
+		if (!req.user || !req.authToken) {
+			return res.sendUnauthenticated();
+		}
+
+		req.authToken.remove();
+		res.send();
 		next();
 	});
 };

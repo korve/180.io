@@ -80,7 +80,6 @@
 					server.close(function () {
 						done(err);
 					});
-
 				});
 			});
 		});
@@ -138,16 +137,23 @@
 					})
 					.done();
 			});
+		});
 
-			it("Should return information about the user (name, image etc.)", function(done) {
+		describe("/user/logout", function () {
+			it("Should return a 401 status if not authenticated", function(done) {
+				request(server)
+					.get('/user/logout')
+					.expect('link', new RegExp(options.auth.tokenEndpoint))
+					.expect(401, done);
+			});
+
+			it("Should return a 200 status if authenticated and return a json object containing user info", function(done) {
 				authenticate()
 					.then(function (token) {
 						return request(server)
-							.get('/user/info')
+							.get('/user/logout')
 							.set('Authorization', 'Bearer ' + token)
-							.expect(200, function (err, res) {
-								done(err);
-							});
+							.expect(200, done);
 					})
 					.done();
 			});

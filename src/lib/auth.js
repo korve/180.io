@@ -106,6 +106,7 @@ module.exports.configure = function (container) {
 							});
 						}
 
+						req.authToken = authToken;
 						req.user = authToken._user;
 						cb(null, true);
 					});
