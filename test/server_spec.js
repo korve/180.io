@@ -100,6 +100,7 @@
 						username: mockUser.username,
 						password: mockUserPassword
 					})
+					// auth header is base64 encoded clientId+clientSecret
 					.auth('testing', options.auth.clients.testing.secret)
 					.set('Content-Type', 'application/x-www-form-urlencoded')
 					.expect(200)
@@ -147,13 +148,18 @@
 					.expect(401, done);
 			});
 
-			it("Should return a 200 status if authenticated and return a json object containing user info", function(done) {
+			it("Should return a 200 status if logout was successful", function(done) {
 				authenticate()
 					.then(function (token) {
 						return request(server)
 							.get('/user/logout')
 							.set('Authorization', 'Bearer ' + token)
-							.expect(200, done);
+							.expect(200, function () {
+								// should now return a 401
+								request(server)
+									.get('/user/logout')
+									.expect(401, done);
+							});
 					})
 					.done();
 			});

@@ -34,6 +34,10 @@ module.exports.create = function (options) {
 	container.options = options;
 	container.server = restify.createServer(container.options.restify);
 
+	// TODO add trusted domains
+	container.server.pre(restify.CORS());
+	container.server.use(restify.fullResponse());
+
 	return db.init(container)
 			.then(auth.configure)
 			.then(routes.configure)

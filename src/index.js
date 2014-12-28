@@ -3,11 +3,11 @@
 
 	require('./lib/server').create({
 		restify: {
-			name: '180.io testing server'
+			name: '180.io server'
 		}
 	})
 		.then(function (server) {
-			server.listen(8080);
+			server.listen(9010);
 		})
 		.done();
 })();
