@@ -3,11 +3,14 @@
  */
 
 module.exports = function (container) {
-	container.server.get('/user/getSessionInfo', function (req, res, next) {
+	container.server.get('/user/info', function (req, res, next) {
 		if (!req.user) {
 			return res.sendUnauthenticated();
 		}
-		res.send('Hi, ' + req.user.username);
+		res.send({
+			name: req.user.name,
+			imageUrl: req.user.imageUrl
+		});
 		next();
 	});
 };

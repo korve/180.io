@@ -5,18 +5,17 @@
 		chai = require("chai"),
 		chaiAsPromised = require("chai-as-promised"),
 		request = require('supertest'),
-		expect = chai.expect,
 		restify = require('restify'),
-		User = require('../src/lib/db/user');
+		User = require('../src/lib/db/user'),
+		AuthToken = require('../src/lib/db/authToken');
 
 	chai.use(chaiAsPromised);
 
 	describe("API tests", function(){
-		var server, port, host, agent, options;
-		var mockUser, mockUserPassword, authToken;
+		var server, port, options;
+		var mockUser, mockUserPassword;
 
 		port = 9000;
-		host = 'http://localhost:' + port;
 
 		options = {
 			restify: {
@@ -48,8 +47,12 @@
 				.then(function () {
 					mockUserPassword = 'mockpass';
 					mockUser = new User({
-						username: 'mockuser',
-						password: mockUserPassword
+						username: 	'mockuser',
+						password: 	mockUserPassword,
+						email: 		'mockEmail',
+						name: 		'mockName',
+						imageUrl: 	'http://example.com/mock',
+						created:	new Date()
 					});
 
 					return q.promise(function (resolve, reject) {
@@ -67,10 +70,17 @@
 		});
 
 		afterEach(function (done) {
-			User.find({id: mockUser.id}).remove(function (err) {
 
-				server.close(function () {
-					done(err);
+			// clean user
+			User.find({_id: mockUser._id}).remove(function (err) {
+
+				// clean related auth token
+				AuthToken.find({_user: mockUser._id}).remove(function (err) {
+
+					server.close(function () {
+						done(err);
+					});
+
 				});
 			});
 		});
@@ -83,11 +93,6 @@
 		 */
 		function authenticate() {
 			return q.promise(function (resolve, reject) {
-				if(authToken)
-				{
-					return authToken;
-				}
-
 				var agent = request.agent(server);
 
 				agent.post(options.auth.tokenEndpoint)
@@ -103,16 +108,15 @@
 						if(err)
 							reject(err);
 
-						authToken = res.body.access_token;
-						resolve(authToken);
+						resolve(res.body.access_token);
 					});
 			});
 		}
 
-		describe("/user/getSessionInfo", function () {
+		describe("/user/info", function () {
 			it("Should return a 401 status if not authenticated", function(done) {
 				request(server)
-					.get('/user/getSessionInfo')
+					.get('/user/info')
 					.expect('link', new RegExp(options.auth.tokenEndpoint))
 					.expect(401, done);
 			});
@@ -121,7 +125,25 @@
 				authenticate()
 					.then(function (token) {
 						return request(server)
-							.get('/user/getSessionInfo')
+							.get('/user/info')
+							.set('Authorization', 'Bearer ' + token)
+							.expect(200)
+							.expect({
+								name:		mockUser.name,
+								imageUrl: 	mockUser.imageUrl
+							})
+							.end(function (err) {
+								done(err)
+							});
+					})
+					.done();
+			});
+
+			it("Should return information about the user (name, image etc.)", function(done) {
+				authenticate()
+					.then(function (token) {
+						return request(server)
+							.get('/user/info')
 							.set('Authorization', 'Bearer ' + token)
 							.expect(200, function (err, res) {
 								done(err);

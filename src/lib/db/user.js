@@ -11,6 +11,7 @@ var userSchema = mongoose.Schema({
 	password: String,
 	email: String,
 	name: String,
+	imageUrl: String,
 	created: Date
 });
 
@@ -18,6 +19,8 @@ userSchema.pre('save', true, function (next, done) {
 	next();
 
 	var user = this;
+	if( ! user.created)
+		user.created = new Date();
 
 	cryptoUtil.hashPassword(user.password, null, 10000)
 		.catch(function (err) {
