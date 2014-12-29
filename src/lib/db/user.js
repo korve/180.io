@@ -4,6 +4,7 @@
 
 var mongoose = require('mongoose');
 var cryptoUtil = require('../util/crypto');
+var uniqueValidator = require('mongoose-unique-validator');
 
 var userSchema = mongoose.Schema({
 	id: String,
@@ -17,7 +18,10 @@ var userSchema = mongoose.Schema({
 		required: true
 	},
 	// the name entered when signing up
-	name: String,
+	name: {
+		type: String,
+		required: true
+	},
 	// handle to identify the user for API requests
 	handle: {
 		type: String,
@@ -86,5 +90,7 @@ userSchema.pre('save', true, function (next, done) {
 	});
 
 });
+
+userSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('User', userSchema);

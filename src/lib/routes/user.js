@@ -2,11 +2,25 @@
  * Created by andre (http://korve.github.io/) on 27.12.2014
  */
 
-var restify = require('restify'),
-	User = require('../db/user');
+var _ = require('underscore'),
+	restify = require('restify'),
+	User = require('../db/user'),
+	ValidationError = require('../errors/ValidationError');
 
 module.exports = function (container) {
 	var server = container.server;
+
+	server.get('/user', function (req, res, next) {
+		if (!req.user)
+			return res.sendUnauthenticated();
+
+		res.send({
+			handle: req.user.handle,
+			name: req.user.name,
+			imageUrl: req.user.imageUrl
+		});
+		next();
+	});
 
 	server.get('/user/:handle', function (req, res, next) {
 
@@ -32,13 +46,20 @@ module.exports = function (container) {
 	 */
 	server.post('/user', function (req, res, next) {
 
-		var user = new User(req.body);
+		var data = _.pick(req.body, 'name', 'email', 'password');
+
+		var user = new User(data);
 		user.save(function (err) {
 
 			if(err)
-				return next(new restify.errors.InvalidContentError());
+			{
+				res.send(400, new ValidationError("", err.errors));
+				return next();
+			}
 
 			res.send({
+				email: user.email,
+				name: user.name,
 				handle: user.handle
 			});
 			next();
@@ -66,44 +87,6 @@ module.exports = function (container) {
 			});
 			next();
 		});
-
-		// user can only save if logged in
-		//if (!req.user) {
-		//	return res.sendUnauthenticated();
-		//}
-
-		//if(req.params.handle !== user.handle)
-		//	return next(new restify.errors.NotAuthorizedError());
-		//
-		//User.findOne({ handle: req.params.handle})
-		//	.exec(function (err, user) {
-		//		if( ! user)
-		//			return next(new restify.errors.ResourceNotFoundError());
-		//
-		//		// only send publicly available data
-		//		res.send({
-		//			handle: user.handle,
-		//			imageUrl: user.imageUrl
-		//		});
-		//		next();
-		//	});
-
-		//if(req.params.handle)
-		//	user.handle = req.params.handle;
-		//
-		//if(req.params.imageUrl)
-		//	user.imageUrl = req.params.imageUrl;
-		//
-		//user.save(function (err) {
-		//	if(err)
-		//		return next(new restify.errors.InvalidContentError());
-		//
-		//	res.send({
-		//		handle: user.handle,
-		//		imageUrl: user.imageUrl
-		//	});
-		//	next();
-		//});
 	});
 
 	/**

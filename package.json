@@ -19,8 +19,10 @@
     "extend": "^2.0.0",
     "mongodb": "^1.4.26",
     "mongoose": "^3.8.21",
+    "mongoose-unique-validator": "^0.4.1",
     "q": "^1.1.2",
     "restify": "^2.8.4",
-    "restify-oauth2": "^4.0.0"
+    "restify-oauth2": "^4.0.0",
+    "underscore": "^1.7.0"
   }
 }

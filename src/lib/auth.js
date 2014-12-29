@@ -34,7 +34,7 @@ module.exports.configure = function (container) {
 			 * @returns {boolean}
 			 */
 			grantUserToken: function (userCreds, req, cb) {
-				User.findOne({ email: userCreds.email }, function (err, user) {
+				User.findOne({ email: userCreds.username }, function (err, user) {
 
 					if(err)
 						return cb(null, err);
