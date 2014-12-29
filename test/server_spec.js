@@ -50,7 +50,7 @@
 						username: 	'mockuser',
 						password: 	mockUserPassword,
 						email: 		'mockEmail',
-						name: 		'mockName',
+						handle: 	'mockName',
 						imageUrl: 	'http://example.com/mock',
 						created:	new Date()
 					});
@@ -113,56 +113,121 @@
 			});
 		}
 
-		describe("/user/info", function () {
-			it("Should return a 401 status if not authenticated", function(done) {
-				request(server)
-					.get('/user/info')
-					.expect('link', new RegExp(options.auth.tokenEndpoint))
-					.expect(401, done);
+		describe("/user/:handle", function () {
+			describe('GET', function () {
+				it('should return information about a user', function (done) {
+					request(server)
+						.get('/user/' + mockUser.handle)
+						.expect(200)
+						.expect({
+							handle: 	mockUser.handle,
+							imageUrl: 	'http://example.com/mock'
+						})
+						.end(done);
+				});
+
+				it('should return a ResourceNotFoundError (404) when user could not be found', function (done) {
+					request(server)
+						//TODO make sure this user does not exist
+						.get('/user/notExisingUserHandle')
+						.expect(404, done);
+				});
+
+				it('should return a ResourceNotFoundError (404) when the handle is missing', function (done) {
+					request(server)
+						//TODO make sure this user does not exist
+						.get('/user')
+						.expect(404, done);
+				});
 			});
 
-			it("Should return a 200 status if authenticated and return a json object containing user info", function(done) {
-				authenticate()
-					.then(function (token) {
-						return request(server)
-							.get('/user/info')
-							.set('Authorization', 'Bearer ' + token)
-							.expect(200)
-							.expect({
-								name:		mockUser.name,
-								imageUrl: 	mockUser.imageUrl
-							})
-							.end(function (err) {
-								done(err)
-							});
-					})
-					.done();
+			describe('POST', function () {
+
+				it('should return a NotAuthorizedError (403) when trying to update another user than the current', function (done) {
+					authenticate()
+						.then(function (token) {
+							return request(server)
+								.post('/user/notMe')
+								.send({
+									handle:		'newMockHandle',
+									imageUrl: 	'http://example.com/newImage'
+								})
+								.set('Authorization', 'Bearer ' + token)
+								.expect(403, function (err, res) {
+									done(err);
+								});
+						})
+						.done();
+				});
+
+				it('should return a 200 when updating self', function (done) {
+					authenticate()
+						.then(function (token) {
+							return request(server)
+								.post('/user/' + mockUser.handle)
+								.send({
+									handle:		'newMockHandle',
+									imageUrl: 	'http://example.com/newImage'
+								})
+								.set('Authorization', 'Bearer ' + token)
+								.expect(200, function (err, res) {
+									done(err);
+								});
+						})
+						.done();
+				});
 			});
 		});
 
-		describe("/user/logout", function () {
-			it("Should return a 401 status if not authenticated", function(done) {
-				request(server)
-					.get('/user/logout')
-					.expect('link', new RegExp(options.auth.tokenEndpoint))
-					.expect(401, done);
-			});
-
-			it("Should return a 200 status if logout was successful", function(done) {
-				authenticate()
-					.then(function (token) {
-						return request(server)
-							.get('/user/logout')
-							.set('Authorization', 'Bearer ' + token)
-							.expect(200, function () {
-								// should now return a 401
-								request(server)
-									.get('/user/logout')
-									.expect(401, done);
-							});
-					})
-					.done();
-			});
-		});
+		//	it("Should return a 401 status if not authenticated", function(done) {
+		//		request(server)
+		//			.get('/user/info')
+		//			.expect('link', new RegExp(options.auth.tokenEndpoint))
+		//			.expect(401, done);
+		//	});
+		//
+		//	it("Should return a 200 status if authenticated and return a json object containing user info", function(done) {
+		//		authenticate()
+		//			.then(function (token) {
+		//				return request(server)
+		//					.get('/user/info')
+		//					.set('Authorization', 'Bearer ' + token)
+		//					.expect(200)
+		//					.expect({
+		//						name:		mockUser.name,
+		//						imageUrl: 	mockUser.imageUrl
+		//					})
+		//					.end(function (err) {
+		//						done(err)
+		//					});
+		//			})
+		//			.done();
+		//	});
+		//});
+		//
+		//describe("/user/logout", function () {
+		//	it("Should return a 401 status if not authenticated", function(done) {
+		//		request(server)
+		//			.get('/user/logout')
+		//			.expect('link', new RegExp(options.auth.tokenEndpoint))
+		//			.expect(401, done);
+		//	});
+		//
+		//	it("Should return a 200 status if logout was successful", function(done) {
+		//		authenticate()
+		//			.then(function (token) {
+		//				return request(server)
+		//					.get('/user/logout')
+		//					.set('Authorization', 'Bearer ' + token)
+		//					.expect(200, function () {
+		//						// should now return a 401
+		//						request(server)
+		//							.get('/user/logout')
+		//							.expect(401, done);
+		//					});
+		//			})
+		//			.done();
+		//	});
+		//});
 	});	
 })();

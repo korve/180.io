@@ -10,9 +10,12 @@ var userSchema = mongoose.Schema({
 	username: String,
 	password: String,
 	email: String,
-	name: String,
+	handle: String,
 	imageUrl: String,
-	created: Date
+	created: {
+		type:		Date,
+		'default':	Date.now
+	}
 });
 
 userSchema.pre('save', true, function (next, done) {

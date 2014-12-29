@@ -13,11 +13,6 @@ module.exports.configure = function (container) {
 	if( ! options.clients)
 		throw new Error('clients must be provided for the oauth2 api');
 
-	container.server.use(restify.authorizationParser());
-	container.server.use(restify.bodyParser({
-		mapParams: false
-	}));
-
 	// ropc validates api clients and lets their users
 	// authenticate with a username+password
 	restifyOAuth2.ropc(container.server, {
