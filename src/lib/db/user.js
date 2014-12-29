@@ -7,10 +7,22 @@ var cryptoUtil = require('../util/crypto');
 
 var userSchema = mongoose.Schema({
 	id: String,
-	username: String,
-	password: String,
-	email: String,
-	handle: String,
+	email: {
+		type: String,
+		unique: true,
+		required: true
+	},
+	password: {
+		type: String,
+		required: true
+	},
+	// the name entered when signing up
+	name: String,
+	// handle to identify the user for API requests
+	handle: {
+		type: String,
+		unique: true
+	},
 	imageUrl: String,
 	created: {
 		type:		Date,
@@ -25,15 +37,54 @@ userSchema.pre('save', true, function (next, done) {
 	if( ! user.created)
 		user.created = new Date();
 
-	cryptoUtil.hashPassword(user.password, null, 10000)
-		.catch(function (err) {
-			done(err);
-		})
-		.then(function (password) {
-			user.password = password;
-			done();
-		})
-		.done();
+	if( ! user.handle)
+	{
+		// generate new handle
+		var handle = user.name.replace(/[^\w]/ig, '');
+		handle = handle.slice(0, 16);
+
+		user.handle = handle;
+	}
+
+	module.exports.find({ handle: new RegExp('^' + user.handle) }, function (err, users) {
+
+		if(users.length > 0)
+		{
+			var unique = false;
+			var newHandle = user.handle;
+
+			while(!unique)
+			{
+				// TODO does not scale
+				newHandle = user.handle + Math.floor(Math.random() * 10000).toString();
+
+				var hasDuplicate = false;
+				users.forEach(function (u) {
+					if(u.handle === newHandle)
+					{
+						hasDuplicate = true;
+						return false;
+					}
+				});
+
+				if( ! hasDuplicate)
+					unique = true;
+			}
+
+			user.handle = newHandle;
+		}
+
+		cryptoUtil.hashPassword(user.password, null, 10000)
+			.catch(function (err) {
+				done(err);
+			})
+			.then(function (password) {
+				user.password = password;
+				done();
+			})
+			.done();
+	});
+
 });
 
 module.exports = mongoose.model('User', userSchema);

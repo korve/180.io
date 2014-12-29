@@ -30,60 +30,42 @@ module.exports = function (container) {
 	/**
 	 * Used for signing up
 	 */
+	server.post('/user', function (req, res, next) {
+
+		var user = new User(req.body);
+		user.save(function (err) {
+
+			if(err)
+				return next(new restify.errors.InvalidContentError());
+
+			res.send({
+				handle: user.handle
+			});
+			next();
+		});
+
+	});
+
+	/**
+	 * Updating a user
+	 */
 	server.post('/user/:handle', function (req, res, next) {
 		var handle = req.params.handle;
 
-		User.findOne({ handle: handle })
-			.exec(function (err, user) {
-				if (user !== null)
-				{
-					/**
-					 * Update user.
-					 * Only allowed for own user and when signed in.
-					 */
-					if (!req.user)
-						return res.sendUnauthenticated();
+		if (!req.user)
+			return res.sendUnauthenticated();
 
-					if(handle !== user.handle)
-						return next(new restify.errors.NotAuthorizedError());
+		if(handle !== user.handle)
+			return next(new restify.errors.NotAuthorizedError());
 
-					user.save(req.body, function (err) {
+		req.user.save(req.body, function (err) {
 
-						res.send({
-							handle: user.handle,
-							imageUrl: user.imageUrl
-						});
-						next();
-					});
-				}
-				else
-				{
-					/**
-					 * Can not register when already logged in
-					 */
-					if(req.user)
-						return next(new restify.errors.NotAuthorizedError());
-
-					if( ! req.body.username || ! req.body.email || ! req.body.password)
-						return next(new restify.errors.InvalidContentError());
-
-					/**
-					 * Create new user
-					 */
-					user = new User(req.body);
-					user.save(function (err) {
-						if(err)
-							return next(new restify.errors.InvalidContentError());
-
-						res.send({
-							handle: user.handle,
-							imageUrl: user.imageUrl
-						});
-						next();
-					});
-				}
+			res.send({
+				handle: user.handle,
+				imageUrl: user.imageUrl
 			});
-
+			next();
+		});
 
 		// user can only save if logged in
 		//if (!req.user) {
