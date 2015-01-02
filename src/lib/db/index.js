@@ -2,6 +2,7 @@
  * Created by andre (http://korve.github.io/) on 27.12.2014
  */
 
+var util = require('util');
 var q = require('q');
 var extend = require('extend');
 var mongoose = require('mongoose');
@@ -9,14 +10,20 @@ var mongoose = require('mongoose');
 module.exports.init = function (container) {
 	var defaults = {
 		host: 'localhost',
-		db: null
+		port: '27017',
+		name: null
 	};
 	container.options.db = extend(defaults, container.options.db);
 
 	if(!container.options.db)
 		throw new Error('\'db\' option is required for db.init()');
 
-	mongoose.connect('mongodb://' + container.options.db.host + '/' + container.options.db.db);
+	var connStr = util.format('mongodb://%s:%d/%s',
+		container.options.db.host,
+		container.options.db.port,
+		container.options.db.name
+	);
+	mongoose.connect(connStr);
 
 	return q.when(mongoose.connection)
 		.then(function (conn) {

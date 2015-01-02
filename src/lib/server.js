@@ -20,8 +20,7 @@ module.exports.create = function (options) {
 			}
 		},
 		db: {
-			'host': 'localhost',
-			'db':	'180io'
+			name:	'180io'
 		},
 		restify: {
 			name: '',

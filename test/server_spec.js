@@ -15,7 +15,7 @@
 	chai.use(chaiAsPromised);
 
 	var expect = chai.expect;
-	var mongod;
+	var mongod, mongodPort = '27018';
 
 	before(function (done) {
 		if(typeof process.env.MONGO_PATH === 'undefined')
@@ -27,7 +27,7 @@
 
 		var stdOut = '';
 
-		mongod = childProcess.spawn(process.env.MONGO_PATH, ['--dbpath=' + dbDir]);
+		mongod = childProcess.spawn(process.env.MONGO_PATH, ['--dbpath=' + dbDir, '--port=' + mongodPort]);
 		mongod.on('error', function (err) {
 			done(err);
 		});
@@ -39,11 +39,17 @@
 			stdOut += data;
 			if(/waiting for connections/i.exec(data))
 				done();
+
+			setTimeout(function () {
+				mongod.kill();
+				done(new Error('Starting mongod timed out'));
+			}, 10000)
 		});
 	});
 
 	after(function () {
-		mongod.kill();
+		if(mongod.connected)
+			mongod.kill();
 	});
 
 	describe("API tests", function(){
@@ -66,7 +72,7 @@
 				}
 			},
 			db: {
-				db: '180io-testing'
+				port: mongodPort
 			}
 		};
 
