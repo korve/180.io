@@ -1,7 +1,10 @@
 (function() {
 	"use strict";
 
-	var q = require('q'),
+	var	path = require('path'),
+		fs = require('fs'),
+		childProcess = require('child_process'),
+		q = require('q'),
 		chai = require("chai"),
 		chaiAsPromised = require("chai-as-promised"),
 		request = require('supertest'),
@@ -12,8 +15,39 @@
 	chai.use(chaiAsPromised);
 
 	var expect = chai.expect;
+	var mongod;
+
+	before(function (done) {
+		if(typeof process.env.MONGO_PATH === 'undefined')
+			throw  new Error('Please set MONGO_PATH environment variable to the path to mongod.exe');
+
+		var dbDir = path.normalize(__dirname + '/db/');
+		if( ! fs.existsSync(dbDir))
+			fs.mkdirSync(dbDir);
+
+		var stdOut = '';
+
+		mongod = childProcess.spawn(process.env.MONGO_PATH, ['--dbpath=' + dbDir]);
+		mongod.on('error', function (err) {
+			done(err);
+		});
+		mongod.on('exit', function (code, signal) {
+			console.log('stdout:\n' + stdOut);
+			done(new Error('Mongod process shutdown with exit code ' + code));
+		});
+		mongod.stdout.on('data', function (data) {
+			stdOut += data;
+			if(/waiting for connections/i.exec(data))
+				done();
+		});
+	});
+
+	after(function () {
+		mongod.kill();
+	});
 
 	describe("API tests", function(){
+
 		var server, port, options;
 		var mockUser, mockUserPassword;
 
@@ -55,6 +89,7 @@
 						username: 	'mockUser',
 						password: 	mockUserPassword,
 						email: 		'mockEmail@example.com',
+						name:		'mock Name',
 						handle: 	'mockName',
 						imageUrl: 	'http://example.com/mock',
 						created:	new Date()
